@@ -5,6 +5,7 @@ on:
     branches: [ development ]
   pull_request:
     branches: [ development ]
+  workflow_dispatch:
 
 env:
   AZURE_WEBAPP_NAME: brdnugtest20211108105354
