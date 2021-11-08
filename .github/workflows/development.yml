@@ -49,6 +49,7 @@ jobs:
   pushToAzure:
     name: Push To Azure
     environment: development
+    needs: build
     runs-on: ubuntu-latest
 
     steps:
