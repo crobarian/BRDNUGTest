@@ -56,15 +56,12 @@ jobs:
     - name: Download a Build Artifacts
       uses: actions/download-artifact@v2.0.5
 
-    - name: Extract File
-      run: Expand-Archive -Path webApp.zip -DestinationPath ".\webApp" -Force
-
     - name: Deploy to Azure WebApp
       uses: azure/webapps-deploy@v2
       with:
         app-name: ${{ env.AZURE_WEBAPP_NAME }}
         slot-name: ${{ env.AZURE_WEBAPP_SLOT_NAME }}
-        package: .\webApp
+        package: .\webapp
         publish-profile: ${{ env.AZURE_WEBAPP_PUBLISH_PROFILE }}
 
     
