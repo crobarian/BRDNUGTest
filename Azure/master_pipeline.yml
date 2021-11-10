@@ -1,0 +1,79 @@
+# ASP.NET Core (.NET Framework)
+# Build and test ASP.NET Core projects targeting the full .NET Framework.
+# Add steps that publish symbols, save build artifacts, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
+
+trigger:
+- master
+
+pool:
+  vmImage: 'windows-latest'
+
+variables:
+  solution: '**/BRDNUGTest_Azure.sln'
+  buildPlatform: 'Any CPU'
+  buildConfiguration: 'Release'
+
+stages: 
+
+- stage: Build
+
+  jobs:
+  
+    - job: BuildApp
+      steps:
+        - task: NuGetToolInstaller@1
+
+        - task: NuGetCommand@2
+          inputs:
+            restoreSolution: '$(solution)'
+
+        - script: dotnet build --configuration $(buildConfiguration)
+          displayName: 'dotnet build $(buildConfiguration)'
+
+        - task: VSTest@2
+          inputs:
+            platform: '$(buildPlatform)'
+            configuration: '$(buildConfiguration)'
+
+        - task: DotNetCoreCLI@2
+          inputs:
+            command: 'publish'
+            publishWebProjects: true
+
+        - task: ArchiveFiles@2
+          displayName: 'Zip Website Files'
+          inputs:
+            rootFolderOrFile: './BRDNUGTest_Azure/bin/Release/net5.0'
+            includeRootFolder: false
+            archiveType: 'zip'
+            archiveFile: '$(build.artifactStagingDirectory)\WebApp.zip'
+            replaceExistingArchive: true
+
+        - task: PublishBuildArtifacts@1
+          inputs:
+            PathtoPublish: ' $(Build.ArtifactStagingDirectory)'
+            ArtifactName: 'webApp'
+            publishLocation: 'Container'
+
+- stage: DeployToAzure
+  displayName: Deploy to Azure
+  dependsOn: Build
+
+  jobs:
+
+    - deployment: DeployApp
+      environment: main
+
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+
+              - task: AzureRmWebAppDeployment@4
+                inputs:
+                  ConnectionType: 'AzureRM'
+                  azureSubscription: 'Pay-As-You-Go (5be6f756-6c46-4b78-9eb5-4379412db019)'
+                  appType: 'webAppLinux'
+                  WebAppName: 'BRDNUGTest20211108105354'
+                  packageForLinux: '$(Pipeline.Workspace)/webApp/WebApp.zip'
